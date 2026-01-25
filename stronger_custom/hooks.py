@@ -58,7 +58,9 @@ app_license = "MIT"
 
 # before_install = "stronger_custom.install.before_install"
 # after_install = "stronger_custom.install.after_install"
-
+# This hook runs at the start of every request and bench command
+#Sbefore_migrate = "stronger_custom.utils.apply_redis_patch"
+after_install = "stronger_custom.utils.apply_redis_patch"
 # Uninstallation
 # ------------
 
