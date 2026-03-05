@@ -1,0 +1,22 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stronger_custom"
+dynamic = ["version", "dependencies"]
+description = "Factory custom"
+authors = [
+{name = "houssam", email = "[eng.houssam.sawan@gmail.com](mailto:eng.houssam.sawan@gmail.com)"}
+]
+requires-python = ">=3.8"
+
+[tool.setuptools]
+packages = ["stronger_custom"]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "stronger_custom.**version**"}
+dependencies = {file = ["requirements.txt"]}
