@@ -18,5 +18,5 @@ packages = ["stronger_custom"]
 include-package-data = true
 
 [tool.setuptools.dynamic]
-version = {attr = "stronger_custom.**version**"}
+version = {attr = "stronger_custom.__version__""}
 dependencies = {file = ["requirements.txt"]}
