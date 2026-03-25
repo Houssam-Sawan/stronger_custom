@@ -9,7 +9,7 @@ name = "stronger_custom"
 dynamic = ["version", "dependencies"]
 description = "Factory custom"
 authors = [
-{name = "houssam", email = "[eng.houssam.sawan@gmail.com](mailto:eng.houssam.sawan@gmail.com)"}
+{name = "houssam", email = "eng.houssam.sawan@gmail.com"}
 ]
 requires-python = ">=3.8"
 
