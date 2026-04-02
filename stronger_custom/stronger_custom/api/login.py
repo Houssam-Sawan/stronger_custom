@@ -18,15 +18,19 @@ def login(usr, pwd):
     # User is now authenticated in this session
     api_generate = generate_keys(frappe.session.user)
     user = frappe.get_doc('User', frappe.session.user)
+    company = frappe.db.get_value('User Permission', {"user": frappe.session.user,"allow": "Company"}, 'for_value') or None
+    company_abbr = frappe.db.get_value('Company', company, 'abbr') if company else None
 
     frappe.response['message'] = {
         "success_key": 1,
-        "message": "Logged in",
+        "message": "Logged in deep",
         "sid": frappe.session.sid,
         "api_key": user.api_key,
         "api_secret": api_generate,
         "username": user.username,
-        "email": user.email
+        "email": user.email,
+        "company": company,
+        "company_abbr": company_abbr
     }
 
 def generate_keys(user):
