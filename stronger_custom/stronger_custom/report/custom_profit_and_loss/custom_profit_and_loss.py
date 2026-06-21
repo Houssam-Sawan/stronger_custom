@@ -13,25 +13,37 @@ def execute(filters=None):
     
     # 2. Fetch Aggregated Data from GL Entries
     company = filters.get("company")
-    fiscal_year = filters.get("fiscal_year")
+    filter_based_on = filters.get("filter_based_on")
     from_date = filters.get("from_date")
     to_date = filters.get("to_date")
     
-    # Simple helper to get net balances from Account Types/Root Types
-    def get_balance(account_type=None, root_type=None):
-        cond = "company = %(company)s AND posting_date BETWEEN %(from_date)s AND %(to_date)s"
-        params = {"company": company, "from_date": from_date, "to_date": to_date}
+	# If filtering by Fiscal Year, automatically extract the start and end dates
+    if filter_based_on == "Fiscal Year" and filters.get("fiscal_year"):
+       fy_doc = frappe.get_doc("Fiscal Year", filters.get("fiscal_year"))
+       from_date = fy_doc.year_start_date
+       to_date = fy_doc.year_end_date
+
+	# Guard rail check to ensure dates exist before running SQL queries
+       if not from_date or not to_date:
+         frappe.throw(_("Please select a valid date range or fiscal year."))
+         
+def get_balance(account_type=None, root_type=None):
+    # Added voucher_type != 'Period Closing Voucher' to ignore year-end reset entries
+    cond = """company = %(company)s 
+              AND posting_date BETWEEN %(from_date)s AND %(to_date)s 
+              AND voucher_type != 'Period Closing Voucher'"""
+    
+    params = {"company": company, "from_date": from_date, "to_date": to_date}
+    
+    if account_type:
+        cond += " AND account in (select name from tabAccount where account_type=%(account_type)s)"
+        params["account_type"] = account_type
+    elif root_type:
+        cond += " AND account in (select name from tabAccount where root_type=%(root_type)s)"
+        params["root_type"] = root_type
         
-        if account_type:
-            cond += " AND account in (select name from tabAccount where account_type=%(account_type)s)"
-            params["account_type"] = account_type
-        elif root_type:
-            cond += " AND account in (select name from tabAccount where root_type=%(root_type)s)"
-            params["root_type"] = root_type
-            
-        # Sum of credit - debit for Income, or debit - credit for Expense
-        gl_data = frappe.db.sql(f"SELECT SUM(credit) - SUM(debit) FROM `tabGL Entry` WHERE {cond}", params)
-        return flt(gl_data[0][0]) if gl_data and gl_data[0][0] else 0.0
+    gl_data = frappe.db.sql(f"SELECT SUM(credit) - SUM(debit) FROM `tabGL Entry` WHERE {cond}", params)
+    return flt(gl_data[0][0]) if gl_data and gl_data[0][0] else 0.0
 
     # 3. Calculate metrics mimicking your exact template structure
     # NOTE: Map these to your actual ERPNext Account Categories or Group Accounts
