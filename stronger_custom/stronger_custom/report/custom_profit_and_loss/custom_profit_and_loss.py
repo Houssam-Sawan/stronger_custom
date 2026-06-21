@@ -27,23 +27,21 @@ def execute(filters=None):
        if not from_date or not to_date:
          frappe.throw(_("Please select a valid date range or fiscal year."))
          
-def get_balance(account_type=None, root_type=None):
-    # Added voucher_type != 'Period Closing Voucher' to ignore year-end reset entries
-    cond = """company = %(company)s 
-              AND posting_date BETWEEN %(from_date)s AND %(to_date)s 
-              AND voucher_type != 'Period Closing Voucher'"""
-    
-    params = {"company": company, "from_date": from_date, "to_date": to_date}
-    
-    if account_type:
-        cond += " AND account in (select name from tabAccount where account_type=%(account_type)s)"
-        params["account_type"] = account_type
-    elif root_type:
-        cond += " AND account in (select name from tabAccount where root_type=%(root_type)s)"
-        params["root_type"] = root_type
+    # Simple helper to get net balances from Account Types/Root Types
+    def get_balance(account_type=None, root_type=None):
+        cond = "company = %(company)s AND posting_date BETWEEN %(from_date)s AND %(to_date)s"
+        params = {"company": company, "from_date": from_date, "to_date": to_date}
         
-    gl_data = frappe.db.sql(f"SELECT SUM(credit) - SUM(debit) FROM `tabGL Entry` WHERE {cond}", params)
-    return flt(gl_data[0][0]) if gl_data and gl_data[0][0] else 0.0
+        if account_type:
+            cond += " AND account in (select name from tabAccount where account_type=%(account_type)s)"
+            params["account_type"] = account_type
+        elif root_type:
+            cond += " AND account in (select name from tabAccount where root_type=%(root_type)s)"
+            params["root_type"] = root_type
+            
+        # Sum of credit - debit for Income, or debit - credit for Expense
+        gl_data = frappe.db.sql(f"SELECT SUM(credit) - SUM(debit) FROM `tabGL Entry` WHERE {cond}", params)
+        return flt(gl_data[0][0]) if gl_data and gl_data[0][0] else 0.0
 
     # 3. Calculate metrics mimicking your exact template structure
     # NOTE: Map these to your actual ERPNext Account Categories or Group Accounts
