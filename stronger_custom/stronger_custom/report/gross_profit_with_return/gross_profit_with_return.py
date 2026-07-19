@@ -730,21 +730,38 @@ class GrossProfitGenerator:
 
 		return flt(buying_amount, self.currency_precision)
 
-	def calculate_buying_amount_from_sle(self, row, my_sle, parenttype, parent, item_row, item_code):
-		for i, sle in enumerate(my_sle):
-			# find the stock valution rate from stock ledger entry
+	def calculate_buying_amount_from_sle(self, row, my_sle, parenttype, parent, item_row):
+		"""
+		Calculate buying amount from the matching Stock Ledger Entry.
+		Falls back to incoming rate if no SLE is found.
+		"""
+
+		for sle in my_sle:
 			if (
 				sle.voucher_type == parenttype
-				and parent == sle.voucher_no
+				and sle.voucher_no == parent
 				and sle.voucher_detail_no == item_row
 			):
-				previous_stock_value = len(my_sle) > i + 1 and flt(my_sle[i + 1].stock_value) or 0.0
+				qty = abs(flt(getattr(row, "stock_qty", None) or row.qty))
+				return qty * flt(sle.valuation_rate)
 
-				if previous_stock_value:
-					return abs(previous_stock_value - flt(sle.stock_value)) * flt(row.qty) / abs(flt(sle.qty))
-				else:
-					return flt(row.qty) * self.get_average_buying_rate(row, item_code)
-		return 0.0
+		args = frappe._dict(
+			{
+				"item_code": row.item_code,
+				"warehouse": row.warehouse,
+				"posting_date": row.posting_date,
+				"posting_time": row.posting_time,
+				"qty": row.stock_qty or row.qty,
+				"serial_and_batch_bundle": row.serial_and_batch_bundle,
+				"company": row.company,
+				"allow_zero_valuation": True,
+			}
+		)
+
+		valuation_rate = get_incoming_rate(args)
+
+		qty = abs(flt(getattr(row, "stock_qty", None) or row.qty))
+		return qty * flt(valuation_rate)
 
 	def get_buying_amount(self, row, item_code):
 		# IMP NOTE
