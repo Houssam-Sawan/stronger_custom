@@ -5,7 +5,7 @@ authors = [
 ]
 description = "Factory custom"
 # Changed from 3.10 to 3.8 to match your Docker environment
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
