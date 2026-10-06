@@ -137,6 +137,9 @@ after_install = "stronger_custom.utils.apply_redis_patch"
 # override_whitelisted_methods = {
 #	"frappe.desk.doctype.event.event.get_events": "stronger_custom.event.get_events"
 # }
+override_whitelisted_methods = {
+    "frappe.desk.query_report.run": "stronger_custom.stronger_custom.report_permission.run"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
